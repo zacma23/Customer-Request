@@ -1,0 +1,5 @@
+version: '3.8'
+
+# Root convenience redirect to docker/docker-compose.yml
+include:
+  - docker/docker-compose.yml

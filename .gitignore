@@ -1,0 +1,35 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+.env.*.local
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Uploaded user files
+uploads/
+apps/api/uploads/
+
+# OS and IDE files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Coverage and test output
+coverage/
+playwright-report/
+test-results/
+
+# Prisma generated artifacts
+prisma/*.db
+prisma/*.db-journal

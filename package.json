@@ -1,0 +1,39 @@
+{
+  "name": "customer-request-feedback-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-Powered Customer Request & Feedback Management System",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspaces",
+    "build:api": "npm run build --workspace=apps/api",
+    "build:web": "npm run build --workspace=apps/web",
+    "test": "npm run test --workspaces",
+    "test:api": "npm run test --workspace=apps/api",
+    "prisma:generate": "npm run prisma:generate --workspace=apps/api",
+    "prisma:migrate": "npm run prisma:migrate --workspace=apps/api",
+    "prisma:seed": "npm run prisma:seed --workspace=apps/api",
+    "lint": "npm run lint --workspaces"
+  },
+  "keywords": [
+    "crm",
+    "customer-requests",
+    "feedback",
+    "claude-ai",
+    "telegram-bot",
+    "whatsapp-bot",
+    "express",
+    "react",
+    "prisma"
+  ],
+  "author": "Tech Solutions Architecture",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.118.0"
+  }
+}

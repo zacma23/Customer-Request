@@ -1,0 +1,325 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Customer Request & Feedback Management System API",
+    "version": "1.0.0",
+    "description": "Production-ready REST API for all-in-one business operations, client request tracking, Claude AI automation, and Telegram/WhatsApp bots.",
+    "contact": {
+      "name": "Zacma Technologies Engineering",
+      "email": "engineering@zacma.tech"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "Version 1 API Endpoint"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "15-minute JWT Access Token passed in the Authorization header: Bearer <token>"
+      },
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "refreshToken",
+        "description": "7-day rotating HTTP-only secure refresh token cookie"
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "error": {
+            "type": "object",
+            "properties": {
+              "message": { "type": "string", "example": "Validation failed" },
+              "code": { "type": "string", "example": "VALIDATION_ERROR" },
+              "details": { "type": "array", "items": { "type": "object" } }
+            }
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string", "example": "Bethlehem Haile" },
+          "phone": { "type": "string", "example": "+251911001122" },
+          "email": { "type": "string", "example": "betty@example.com" },
+          "role": { "type": "string", "enum": ["CLIENT", "STAFF", "ADMIN", "SUPER_ADMIN"] },
+          "isPhoneVerified": { "type": "boolean", "example": true }
+        }
+      },
+      "ServiceRequest": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "requestNumber": { "type": "string", "example": "REQ-2026-0001" },
+          "title": { "type": "string", "example": "Custom E-Commerce Platform with Telebirr Integration" },
+          "description": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "MEETING_SCHEDULED",
+              "AWAITING_PAYMENT",
+              "PROOF_SUBMITTED",
+              "VERIFIED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "REJECTED",
+              "CLOSED"
+            ]
+          },
+          "priority": { "type": "string", "enum": ["LOW", "NORMAL", "HIGH", "URGENT"] },
+          "budgetRange": { "type": "string", "example": "50,000 - 100,000 ETB" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/auth/signup": {
+      "post": {
+        "summary": "Client Registration with Phone Verification Challenge",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "phone", "password"],
+                "properties": {
+                  "name": { "type": "string", "example": "Abebe Bikila" },
+                  "phone": { "type": "string", "example": "+251911223344" },
+                  "email": { "type": "string", "example": "abebe@example.com" },
+                  "password": { "type": "string", "example": "StrongPass123!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Client registered successfully, OTP dispatched" },
+          "400": { "description": "Validation or duplicate user error" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Authenticate User with Lockout Protection",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["phoneOrEmail", "password"],
+                "properties": {
+                  "phoneOrEmail": { "type": "string", "example": "+251911000001" },
+                  "password": { "type": "string", "example": "AdminPass123!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Authentication successful, returns JWT & sets refresh cookie" },
+          "401": { "description": "Invalid credentials or account locked" }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "summary": "Rotate Refresh Token & Issue New Access Token",
+        "tags": ["Authentication"],
+        "responses": {
+          "200": { "description": "Tokens rotated" },
+          "401": { "description": "Refresh token expired or reuse detected" }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "Revoke Refresh Token & Clear Cookies",
+        "tags": ["Authentication"],
+        "responses": {
+          "200": { "description": "Logged out successfully" }
+        }
+      }
+    },
+    "/requests": {
+      "get": {
+        "summary": "List Service Requests (Client sees own, Admin sees all)",
+        "tags": ["Requests"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "status", "in": "query", "schema": { "type": "string" } },
+          { "name": "priority", "in": "query", "schema": { "type": "string" } },
+          { "name": "serviceKey", "in": "query", "schema": { "type": "string" } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } }
+        ],
+        "responses": {
+          "200": { "description": "Paginated list of service requests" }
+        }
+      },
+      "post": {
+        "summary": "Create Service Request with Multi-service Intake & Claude AI Analysis",
+        "tags": ["Requests"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "201": { "description": "Service request created" }
+        }
+      }
+    },
+    "/requests/{id}": {
+      "get": {
+        "summary": "Get Request Details with Thread, Meetings & Payments (Guarded against IDOR)",
+        "tags": ["Requests"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Detailed request payload" },
+          "403": { "description": "IDOR prevention: Not authorized to view this request" }
+        }
+      }
+    },
+    "/requests/{id}/status": {
+      "patch": {
+        "summary": "Transition Request Workflow Status (Admin only)",
+        "tags": ["Requests"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Status updated and broadcasted via SSE/bots" }
+        }
+      }
+    },
+    "/messages/request/{requestId}": {
+      "post": {
+        "summary": "Post Message or Internal Note to Request Thread",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "201": { "description": "Message posted and real-time notifications dispatched" }
+        }
+      }
+    },
+    "/meetings": {
+      "post": {
+        "summary": "Schedule Online or In-Person Discovery Meeting (Admin)",
+        "tags": ["Meetings"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "201": { "description": "Meeting invitation issued to client" }
+        }
+      }
+    },
+    "/payments": {
+      "get": {
+        "summary": "List Invoices & Payment Requests",
+        "tags": ["Payments"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "List of payments" }
+        }
+      }
+    },
+    "/payments/proof": {
+      "post": {
+        "summary": "Submit CBE / Telebirr Payment Proof (Client)",
+        "tags": ["Payments"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "201": { "description": "Proof submitted for admin verification" }
+        }
+      }
+    },
+    "/payments/{id}/verify": {
+      "patch": {
+        "summary": "Verify or Reject Payment Proof (Admin)",
+        "tags": ["Payments"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Payment marked VERIFIED or REJECTED" }
+        }
+      }
+    },
+    "/feedbacks": {
+      "get": {
+        "summary": "Public & Admin Feedbacks and CSAT Scores",
+        "tags": ["Feedback"],
+        "responses": {
+          "200": { "description": "Feedback records and average rating" }
+        }
+      }
+    },
+    "/ai/draft-reply": {
+      "post": {
+        "summary": "Generate AI Draft Reply in Amharic, Afaan Oromo, or English (Staff/Admin)",
+        "tags": ["Artificial Intelligence"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Generated draft response" }
+        }
+      }
+    },
+    "/ai/quotation": {
+      "post": {
+        "summary": "Generate AI Itemized Quotation with 15% VAT Calculation (Staff/Admin)",
+        "tags": ["Artificial Intelligence"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Draft quotation line items" }
+        }
+      }
+    },
+    "/webhooks/telegram": {
+      "post": {
+        "summary": "Telegram Bot API Webhook Endpoint",
+        "tags": ["Webhooks"],
+        "responses": {
+          "200": { "description": "Webhook acknowledged" }
+        }
+      }
+    },
+    "/webhooks/whatsapp": {
+      "get": {
+        "summary": "Meta Webhook Hub Challenge Verification",
+        "tags": ["Webhooks"],
+        "responses": {
+          "200": { "description": "Challenge accepted" }
+        }
+      },
+      "post": {
+        "summary": "WhatsApp Cloud API Webhook Ingestion",
+        "tags": ["Webhooks"],
+        "responses": {
+          "200": { "description": "Message processed" }
+        }
+      }
+    },
+    "/realtime/stream": {
+      "get": {
+        "summary": "Server-Sent Events (SSE) Live Feed",
+        "tags": ["Real-time"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Event stream connected (text/event-stream)" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  lint-test-build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: crm_db_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate --schema=./prisma/schema.prisma
+
+      - name: Run Backend Unit & Integration Tests
+        run: npm run test:api
+        env:
+          DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/crm_db_test?schema=public
+          JWT_ACCESS_SECRET: test_access_secret_super_secure_32_characters_minimum
+          JWT_REFRESH_SECRET: test_refresh_secret_super_secure_32_characters_minimum
+
+      - name: Build Backend (TypeScript compile)
+        run: npm run build:api
+
+      - name: Build Frontend (Vite bundle)
+        run: npm run build:web

@@ -103,6 +103,14 @@ export const App: React.FC = () => {
             }
           />
           <Route
+            path="/portal/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['CLIENT']}>
+                <ClientDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/portal/new-request"
             element={
               <ProtectedRoute allowedRoles={['CLIENT']}>

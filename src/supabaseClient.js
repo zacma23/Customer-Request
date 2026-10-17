@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 // ============================================================================
 // 1. Paste your Supabase Project URL here:
 // ============================================================================
-const SUPABASE_URL = "https://xrjbyebmgtzyqzmkyyfq.supabase.co/rest/v1/";
+const SUPABASE_URL = "https://xrjbyebmgtzyqzmkyyfq.supabase.co";
 
 // ============================================================================
 // 2. Paste your Supabase Anon / Public Key here:
